@@ -1,60 +1,53 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.12;
 
 // Import this file to use console.log
 import "hardhat/console.sol";
-import "./MLMLevelLogic.sol";
-error insufficient__funds();
+import "./MLMLevelLogicInterface.sol";
 
-contract MLMDataBase {
-    uint s_contractAccount;
-    mapping(address => uint) private s_usersAccounts;
-    mapping(address => address) private s_usersRefAddress;
-    address[] private s_allUsers;
+contract MLMsistem {
+    mapping(address => uint) private usersAccounts;
+    mapping(address => address) private usersRefAddress;
+    mapping(address => address[]) private usersDirPartner;
+    MLMLevelLogicInterface mlmLevelLogic;
+
+    constructor(address _mlmLevelLogic) {
+        mlmLevelLogic = MLMLevelLogicInterface(_mlmLevelLogic);
+    }
 
     //пять процентов на счет контракта,95 на счет пользователя
     //возможно надо проверить на выход за границы
     function investInMLM() public payable {
-        s_contractAccount = s_contractAccount + (msg.value * 5) / 100;
-        s_usersAccounts[msg.sender] =
-            s_usersAccounts[msg.sender] +
+        usersAccounts[msg.sender] =
+            usersAccounts[msg.sender] +
             (msg.value * 95) /
             100;
     }
 
     //добавляет пользователя
-    function addUser() external {
-        s_allUsers.push(msg.sender);
-    }
+    function addUser() external {}
 
     //добавляет пользователя по рефералке
     function addUser(address usersRefender) external {
-        s_allUsers.push(msg.sender);
-        s_usersRefAddress[msg.sender] = usersRefender;
+        usersRefAddress[msg.sender] = usersRefender;
+        usersDirPartner[usersRefender].push(msg.sender);
     }
 
     //просто возвращает пользователю уровень
     function getLevel() public view returns (uint) {
-        return MLMLevelLogic.getLevelBySum(s_usersAccounts[msg.sender]);
+        return mlmLevelLogic.getLevelBySum(usersAccounts[msg.sender]);
     }
 
-    //возвращает количество DirrectPartners(cупер пупер дорогая)
+    //возвращает количество DirrectPartners
     function getAmountOfDirrectPartners() external view returns (uint) {
-        uint amountOfDirrectPartners = 0;
-        uint size = s_allUsers.length;
-        for (uint i = 0; i < size; i++) {
-            if (s_usersRefAddress[s_allUsers[i]] == msg.sender) {
-                amountOfDirrectPartners++;
-            }
-        }
-        return amountOfDirrectPartners;
+        return usersDirPartner[msg.sender].length;
     }
 
     //Выводит деньги пользователя,запускает функцию рассчета и начисления коомиссии со счетов системы
     function withdrawMoney() public {
-        uint amount = s_usersAccounts[msg.sender];
-        if (amount > 0) revert insufficient__funds();
-        s_usersAccounts[msg.sender] = 0;
+        uint amount = usersAccounts[msg.sender];
+        require(amount > 0, "not enough money");
+        usersAccounts[msg.sender] = 0;
         (payable(msg.sender)).transfer(amount);
         calculateCommission(amount);
     }
@@ -62,20 +55,16 @@ contract MLMDataBase {
     //рассчет комиссии
     function calculateCommission(uint amount) private {
         uint i = 1;
-        address currentAddress = s_usersRefAddress[msg.sender];
+        address currentAddress = usersRefAddress[msg.sender];
         while (currentAddress != address(0)) {
             if (
-                MLMLevelLogic.getLevelBySum(s_usersAccounts[currentAddress]) >=
-                i
+                mlmLevelLogic.getLevelBySum(usersAccounts[currentAddress]) >= i
             ) {
-                s_usersAccounts[currentAddress] +=
+                usersAccounts[currentAddress] +=
                     amount *
-                    MLMLevelLogic.getPercentByDipth(i);
-                s_contractAccount -=
-                    (amount * MLMLevelLogic.getPercentByDipth(i)) /
-                    1000;
+                    mlmLevelLogic.getPercentByDipth(i);
             }
-            currentAddress = s_usersRefAddress[currentAddress];
+            currentAddress = usersRefAddress[currentAddress];
             i++;
         }
     }

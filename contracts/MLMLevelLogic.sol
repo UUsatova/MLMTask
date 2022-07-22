@@ -1,27 +1,52 @@
-pragma solidity ^0.8.9;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.12;
 
-library MLMLevelLogic {
-    function getLevelBySum(uint sum) external pure returns (uint) {
-        if (sum < 5000000000000000) return 0;
-        else if (sum < 10000000000000000) return 1;
-        else if (sum < 20000000000000000) return 2;
-        else if (sum < 50000000000000000) return 3;
-        else if (sum < 100000000000000000) return 4;
-        else if (sum < 200000000000000000) return 5;
-        else if (sum < 500000000000000000) return 6;
-        else if (sum < 1000000000000000000) return 7;
-        else if (sum < 2000000000000000000) return 8;
-        else if (sum < 5000000000000000000) return 10;
-        else return 10;
+import "./MLMLevelLogicInterface.sol";
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract MLMLevelLogic is MLMLevelLogicInterface, Ownable {
+    uint[] private moneyOnLevel;
+    uint[] private percentOnDipth;
+
+    constructor(uint[] memory _moneyOnLevel, uint[] memory _percentOnDipth) {
+        moneyOnLevel = _moneyOnLevel;
+        percentOnDipth = _percentOnDipth;
     }
 
-    function getPercentByDipth(uint i) external pure returns (uint) {
-        if (i == 1) return 10;
-        if (i == 2) return 7;
-        if (i == 3) return 5;
-        if (i == 4) return 2;
-        else {
-            return 1;
+    function setMoneyOnLevel(uint[] memory _moneyOnLevel) external onlyOwner {
+        moneyOnLevel = _moneyOnLevel;
+    }
+
+    function setPercentOnDipth(uint[] memory _percentOnDipth)
+        external
+        onlyOwner
+    {
+        percentOnDipth = _percentOnDipth;
+    }
+
+    function getLevelBySum(uint sum) external view returns (uint) {
+        uint i;
+        for (i = 0; i < moneyOnLevel.length; i++) {
+            if (sum < moneyOnLevel[i]) return i;
         }
+        return i;
+    }
+
+    function getPercentByDipth(uint s) external view returns (uint) {
+        s = s - 1;
+        if (s < percentOnDipth.length) return percentOnDipth[s];
+        return 0;
     }
 }
+
+// ammountOfMoneyOfAccount[0] = 5000000000000000;
+// ammountOfMoneyOfAccount[1] = 10000000000000000;
+// ammountOfMoneyOfAccount[2] = 20000000000000000;
+// ammountOfMoneyOfAccount[3] = 50000000000000000;
+// ammountOfMoneyOfAccount[4] = 100000000000000000;
+// ammountOfMoneyOfAccount[5] = 200000000000000000;
+// ammountOfMoneyOfAccount[6] = 500000000000000000;
+// ammountOfMoneyOfAccount[7] = 1000000000000000000;
+// ammountOfMoneyOfAccount[8] = 2000000000000000000;
+// ammountOfMoneyOfAccount[9] = 5000000000000000000;

@@ -10,15 +10,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log: true,
   });
   log(`MLMLevelLogic deployed at ${MLMLevelLogic.address}`);
-  let MLMsistem = await deploy("MLMsistem", {
+  let MLMsystem = await deploy("MLMsystem", {
     from: deployer,
     args: [MLMLevelLogic.address],
     log: true,
   });
-  log(`MLMsistem deployed at ${MLMsistem.address}`);
+  log(`MLMsystem deployed at ${MLMsystem.address}`);
   if (network.config.chainId != 31337 && process.env.ETHERSCAN_API_KEY) {
     log("verified");
-    await verify(MLMsistem.address, [MLMLevelLogic.address]);
+    await verify(MLMsystem.address, [MLMLevelLogic.address]);
   }
 };
 //yarn hardhat deploy

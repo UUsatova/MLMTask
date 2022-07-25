@@ -14,7 +14,7 @@ async function main() {
   const first = await First.deploy(moneyOnLevel, percentOnDipth);
 
   // Deploy Second
-  const Second = await ethers.getContractFactory("MLMsistem");
+  const Second = await ethers.getContractFactory("MLMsystem");
   const second = await Second.deploy(first.address);
 
   console.log("First: " + first.address);
@@ -22,7 +22,7 @@ async function main() {
 
   if (network.config.chainId != 31337 && process.env.ETHERSCAN_API_KEY) {
     log("verified");
-    await verify(MLMsistem.address, [MLMLevelLogic.address]);
+    await verify(second.address, [first.address]);
   }
 }
 

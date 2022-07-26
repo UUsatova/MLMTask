@@ -63,7 +63,7 @@ contract MLMsystem {
             ) {
                 usersAccount[currentAddress] +=
                     amount *
-                    mlmLevelLogic.getPercentByDipth(i);
+                    mlmLevelLogic.getPercentByDepth(i);
             }
             currentAddress = usersReferalAddress[currentAddress];
             i++;

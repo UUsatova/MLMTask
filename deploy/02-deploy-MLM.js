@@ -3,10 +3,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deployer } = await getNamedAccounts();
 
   let moneyOnLevel = [1, 2, 3];
-  let percentOnDipth = [1, 2, 3];
+  let percentOnDepth = [1, 2, 3];
   let MLMLevelLogic = await deploy("MLMLevelLogic", {
     from: deployer,
-    args: [moneyOnLevel, percentOnDipth],
+    args: [moneyOnLevel, percentOnDepth],
     log: true,
   });
   log(`MLMLevelLogic deployed at ${MLMLevelLogic.address}`);

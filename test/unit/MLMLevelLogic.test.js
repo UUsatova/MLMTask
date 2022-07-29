@@ -7,16 +7,16 @@ const {
 
 describe("MLMLevelLogic", () => {
   let moneyOnLevel = [
-    5000000000000000,
-    10000000000000000n,
-    20000000000000000n,
-    50000000000000000n,
-    100000000000000000n,
-    200000000000000000n,
-    500000000000000000n,
-    1000000000000000000n,
-    2000000000000000000n,
-    5000000000000000000n,
+    ethers.utils.parseEther("0.005"),
+    ethers.utils.parseEther("0.01"),
+    ethers.utils.parseEther("0.02"),
+    ethers.utils.parseEther("0.05"),
+    ethers.utils.parseEther("0.1"),
+    ethers.utils.parseEther("0.2"),
+    ethers.utils.parseEther("0.5"),
+    ethers.utils.parseEther("1"),
+    ethers.utils.parseEther("2"),
+    ethers.utils.parseEther("5"),
   ];
   let percentOnDepth = [10, 7, 5, 2, 1, 1, 1, 1, 1, 1];
   let deployer;

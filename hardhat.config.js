@@ -9,6 +9,7 @@ require("hardhat-contract-sizer");
 require("@nomiclabs/hardhat-solhint");
 require("@nomiclabs/hardhat-ethers");
 require("hardhat-deploy-ethers");
+require("@openzeppelin/hardhat-upgrades");
 
 require("dotenv").config();
 const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY;

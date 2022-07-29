@@ -1,19 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
-// Import this file to use console.log
-import "hardhat/console.sol";
-
 import "contracts/interfaces/IMLMLevelLogic.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract MLMsystem {
+contract MLMsystem is Initializable {
     mapping(address => uint256) private usersAccount;
     mapping(address => address) private usersReferalAddress;
     mapping(address => address[]) private usersDirectPartners;
-    IMLMLevelLogic mlmLevelLogic;
+    address mlmLevelLogic;
 
-    constructor(address _mlmLevelLogic) {
-        mlmLevelLogic = IMLMLevelLogic(_mlmLevelLogic);
+    function initialize(address _mlmLevelLogic) public initializer {
+        mlmLevelLogic = _mlmLevelLogic;
     }
 
     //пять процентов на счет контракта,95 на счет пользователя
@@ -36,7 +34,10 @@ contract MLMsystem {
 
     //просто возвращает пользователю уровень
     function getUserLevel() external view returns (uint256) {
-        return mlmLevelLogic.getLevelBySum(usersAccount[msg.sender]);
+        return
+            IMLMLevelLogic(mlmLevelLogic).getLevelBySum(
+                usersAccount[msg.sender]
+            );
     }
 
     //возвращает количество DirrectPartners
@@ -59,11 +60,13 @@ contract MLMsystem {
         address currentAddress = usersReferalAddress[msg.sender];
         while (currentAddress != address(0)) {
             if (
-                mlmLevelLogic.getLevelBySum(usersAccount[currentAddress]) >= i
+                IMLMLevelLogic(mlmLevelLogic).getLevelBySum(
+                    usersAccount[currentAddress]
+                ) >= i
             ) {
                 usersAccount[currentAddress] +=
                     amount *
-                    mlmLevelLogic.getPercentByDepth(i);
+                    IMLMLevelLogic(mlmLevelLogic).getPercentByDepth(i);
             }
             currentAddress = usersReferalAddress[currentAddress];
             i++;

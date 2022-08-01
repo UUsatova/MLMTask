@@ -2,7 +2,7 @@
 pragma solidity ^0.8.12;
 
 import "contracts/interfaces/IMLMLevelLogic.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract MLMsystem is Initializable {
     mapping(address => uint256) private usersAccount;

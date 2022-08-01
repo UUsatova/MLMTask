@@ -15,7 +15,10 @@ async function main() {
 
   // Deploy Second
   const Second = await ethers.getContractFactory("MLMsystem");
-  const second = await Second.deploy(first.address);
+  const second = await upgrades.deployProxy(Second, [first.address], {
+    initializer: "initialize",
+  });
+  await second.deployed();
 
   console.log("First: " + first.address);
   console.log("Second: " + second.address);

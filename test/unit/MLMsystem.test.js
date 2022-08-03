@@ -29,13 +29,6 @@ describe("MLMsystem", () => {
     await MLMsystem.deployed();
   });
 
-  describe("initialize", async function () {
-    it("sets address of MLMLevelLogic contract correctly", async () => {
-      const response = await MLMsystem.getAddressOfLogicContract();
-      assert.equal(response.toString(), mockMLMLevelLogic.address.toString());
-    });
-  });
-
   describe("addUser", async function () {
     it("add user by with referral address correctly", async () => {
       const accounts = await ethers.getSigners();

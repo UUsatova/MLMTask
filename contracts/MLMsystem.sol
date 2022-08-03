@@ -5,27 +5,41 @@ import "contracts/interfaces/IMLMLevelLogic.sol";
 import "contracts/MLMLevelLogic.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
+/**
+ * @author UUsatova
+ */
 contract MLMsystem is Initializable {
     mapping(address => uint256) private usersAccount;
     mapping(address => address) private usersReferalAddress;
     mapping(address => address[]) private usersDirectPartners;
     address private mlmLevelLogic;
 
+    /**
+     * @dev proxy use this function for contract initialization
+     * @param _mlmLevelLogic  - address of contract with actual level logic
+     */
     function initialize(address _mlmLevelLogic) public initializer {
         mlmLevelLogic = _mlmLevelLogic;
     }
 
-    //добавляет пользователя
+    /**
+     * @notice adds a user to the system
+     */
     function addUser() external pure {}
 
-    //добавляет пользователя по рефералке
+    /**
+     * @notice adds a user to the system using the address of the person who invited him
+     * @param usersRefender address оf the person who invited him
+     */
     function addUser(address usersRefender) external {
         usersReferalAddress[msg.sender] = usersRefender;
         usersDirectPartners[usersRefender].push(msg.sender);
     }
 
-    //пять процентов на счет контракта,95 на счет пользователя
-    //возможно надо проверить на выход за границы
+    /**
+     
+     * @notice deposits 95 percent of the amount sent to the user's account
+     */
     function investInMLM() external payable {
         usersAccount[msg.sender] =
             usersAccount[msg.sender] +
@@ -33,7 +47,10 @@ contract MLMsystem is Initializable {
             100;
     }
 
-    //Выводит деньги пользователя,запускает функцию рассчета и начисления коомиссии со счетов системы
+    /**
+     * @notice when this function is called, the user debits all his money from his account on
+     *          the contract. The money is transferred to his personal account
+     */
     function withdrawMoney() external {
         uint256 amount = usersAccount[msg.sender];
         require(amount > 0, "not enough money");
@@ -43,7 +60,12 @@ contract MLMsystem is Initializable {
         calculateCommission(amount);
     }
 
-    //рассчет комиссии
+    /**
+     * @dev the function performs the calculation and accrual of commission after the withdrawal of a
+     *      certain amount by the user. The commission is charged to users linked to each other by referral
+     *      links
+     * @param amount the amount of money written off by the user
+     */
     function calculateCommission(uint256 amount) private {
         uint256 i = 1;
         address currentAddress = usersReferalAddress[msg.sender];
@@ -63,7 +85,9 @@ contract MLMsystem is Initializable {
         }
     }
 
-    //просто возвращает пользователю уровень
+    /**
+     * @return users' level
+     */
     function getUserLevel() external view returns (uint256) {
         return
             MLMLevelLogic(mlmLevelLogic).getLevelBySum(
@@ -71,23 +95,24 @@ contract MLMsystem is Initializable {
             );
     }
 
-    //возвращает количество DirrectPartners
+    /**
+     * @return amount of users' dirrect partners
+     */
     function getAmountOfDirrectPartners() external view returns (uint256) {
         return usersDirectPartners[msg.sender].length;
     }
 
+    /**
+     * @return users' referal address
+     */
     function getUserReferalAddress() external view returns (address) {
         return usersReferalAddress[msg.sender];
     }
 
+    /**
+     * @return users' current account
+     */
     function getUserAccount() external view returns (uint256) {
         return usersAccount[msg.sender];
-    }
-
-    //! функция была написана для тестирования инициализатора
-    //! я не уверенна в необходимости ее существования
-    //! делать ли ее только для овнера? оставить публичной?  убрать?
-    function getAddressOfLogicContract() public view returns (address) {
-        return mlmLevelLogic;
     }
 }

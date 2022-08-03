@@ -1,0 +1,35 @@
+const { verify } = require("../utils/verify");
+const { ethers, run, network, upgrades } = require("hardhat");
+const { deployMLMLevelLogic } = require("../script/02-deploy-MLMLevelLogic");
+
+async function main() {
+  const { log } = deployments;
+  const [deployer] = await ethers.getSigners();
+  const MLMLevelLogic = await deployMLMLevelLogic();
+  console.log("Deploying contracts with the account: " + deployer.address);
+
+  const mlmsystem = await ethers.getContractFactory("MLMsystem");
+  const MLMsystem = await upgrades.deployProxy(
+    mlmsystem,
+    [MLMLevelLogic.address],
+    {
+      initializer: "initialize",
+    }
+  );
+  await MLMsystem.deployed();
+
+  console.log("MLMsystem: " + MLMsystem.address);
+
+  if (network.config.chainId != 31337 && process.env.ETHERSCAN_API_KEY) {
+    log("verified");
+    await verify(MLMsystem.address, [MLMLevelLogic.address]);
+  }
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+//yarn hardhat run deploy/01-deploy-MLM.js

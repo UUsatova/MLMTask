@@ -2,16 +2,26 @@
 pragma solidity ^0.8.12;
 
 import "contracts/interfaces/IMLMLevelLogic.sol";
+import "contracts/MLMLevelLogic.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract MLMsystem is Initializable {
     mapping(address => uint256) private usersAccount;
     mapping(address => address) private usersReferalAddress;
     mapping(address => address[]) private usersDirectPartners;
-    address mlmLevelLogic;
+    address private mlmLevelLogic;
 
     function initialize(address _mlmLevelLogic) public initializer {
         mlmLevelLogic = _mlmLevelLogic;
+    }
+
+    //добавляет пользователя
+    function addUser() external pure {}
+
+    //добавляет пользователя по рефералке
+    function addUser(address usersRefender) external {
+        usersReferalAddress[msg.sender] = usersRefender;
+        usersDirectPartners[usersRefender].push(msg.sender);
     }
 
     //пять процентов на счет контракта,95 на счет пользователя
@@ -23,34 +33,13 @@ contract MLMsystem is Initializable {
             100;
     }
 
-    //добавляет пользователя
-    function addUser() external {}
-
-    //добавляет пользователя по рефералке
-    function addUser(address usersRefender) external {
-        usersReferalAddress[msg.sender] = usersRefender;
-        usersDirectPartners[usersRefender].push(msg.sender);
-    }
-
-    //просто возвращает пользователю уровень
-    function getUserLevel() external view returns (uint256) {
-        return
-            IMLMLevelLogic(mlmLevelLogic).getLevelBySum(
-                usersAccount[msg.sender]
-            );
-    }
-
-    //возвращает количество DirrectPartners
-    function getAmountOfDirrectPartners() external view returns (uint256) {
-        return usersDirectPartners[msg.sender].length;
-    }
-
     //Выводит деньги пользователя,запускает функцию рассчета и начисления коомиссии со счетов системы
     function withdrawMoney() external {
         uint256 amount = usersAccount[msg.sender];
         require(amount > 0, "not enough money");
         usersAccount[msg.sender] = 0;
-        (payable(msg.sender)).transfer(amount);
+        (bool sent, ) = msg.sender.call{value: amount}("");
+        require(sent, "Failed to send user balance back to the user");
         calculateCommission(amount);
     }
 
@@ -65,11 +54,40 @@ contract MLMsystem is Initializable {
                 ) >= i
             ) {
                 usersAccount[currentAddress] +=
-                    amount *
-                    IMLMLevelLogic(mlmLevelLogic).getPercentByDepth(i);
+                    (amount *
+                        IMLMLevelLogic(mlmLevelLogic).getPercentByDepth(i)) /
+                    1000;
             }
             currentAddress = usersReferalAddress[currentAddress];
             i++;
         }
+    }
+
+    //просто возвращает пользователю уровень
+    function getUserLevel() external view returns (uint256) {
+        return
+            MLMLevelLogic(mlmLevelLogic).getLevelBySum(
+                usersAccount[msg.sender]
+            );
+    }
+
+    //возвращает количество DirrectPartners
+    function getAmountOfDirrectPartners() external view returns (uint256) {
+        return usersDirectPartners[msg.sender].length;
+    }
+
+    function getUserReferalAddress() external view returns (address) {
+        return usersReferalAddress[msg.sender];
+    }
+
+    function getUserAccount() external view returns (uint256) {
+        return usersAccount[msg.sender];
+    }
+
+    //! функция была написана для тестирования инициализатора
+    //! я не уверенна в необходимости ее существования
+    //! делать ли ее только для овнера? оставить публичной?  убрать?
+    function getAddressOfLogicContract() public view returns (address) {
+        return mlmLevelLogic;
     }
 }

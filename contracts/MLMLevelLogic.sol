@@ -3,6 +3,7 @@ pragma solidity ^0.8.12;
 
 import "contracts/interfaces/IMLMLevelLogic.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 /**
  * @title A level logic manipulator

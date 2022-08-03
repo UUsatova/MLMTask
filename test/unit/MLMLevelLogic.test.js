@@ -1,9 +1,6 @@
 const { assert, expect } = require("chai");
 const { network, deployments, ethers } = require("hardhat");
 const { deploy, log } = deployments;
-const {
-  expectRevert, // Assertions for transactions that should fail
-} = require("@openzeppelin/test-helpers");
 
 describe("MLMLevelLogic", () => {
   let moneyOnLevel = [
@@ -23,8 +20,8 @@ describe("MLMLevelLogic", () => {
   let MLMLevelLogic;
   beforeEach(async () => {
     deployer = await ethers.getSigners();
-    const First = await ethers.getContractFactory("MLMLevelLogic");
-    MLMLevelLogic = await First.deploy(moneyOnLevel, percentOnDepth);
+    const mlmLevelLogic = await ethers.getContractFactory("MLMLevelLogic");
+    MLMLevelLogic = await mlmLevelLogic.deploy(moneyOnLevel, percentOnDepth);
   });
 
   describe("constructor", async function () {
@@ -73,9 +70,8 @@ describe("MLMLevelLogic", () => {
     });
 
     it("return error with depth equal 0 ", async () => {
-      //await MLMLevelLogic.getPercentByDepth(0);
-      await expect(await MLMLevelLogic.getPercentByDepth(0)).to.be.revertedWith(
-        "depth can only be positive" //
+      await expect(MLMLevelLogic.getPercentByDepth(0)).to.be.revertedWith(
+        "depth can only be positive"
       );
     });
   });

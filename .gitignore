@@ -14,3 +14,5 @@ gas-report.txt
 yarn-error.log
 coverage
 deploy
+.openzeppelin
+build

@@ -1,14 +1,15 @@
 const { verify } = require("../utils/verify");
-const { ethers, run, network } = require("hardhat");
-
+const { ethers, run, network, upgrades } = require("hardhat");
+// TODO: разбить на два файлика
 async function main() {
   const { log } = deployments;
+  //TODO: ввести корректные данные
   let moneyOnLevel = [1, 2, 3];
   let percentOnDipth = [1, 2, 3];
   log("Deploying MLMLevelLogic and waiting for confirmations...");
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account: " + deployer.address);
-
+  // TODO: переименовать нормально
   // Deploy First
   const First = await ethers.getContractFactory("MLMLevelLogic");
   const first = await First.deploy(moneyOnLevel, percentOnDipth);

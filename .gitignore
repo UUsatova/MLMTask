@@ -1,3 +1,11 @@
+gas-report.txt
+
+yarn-error.log
+coverage
+deploy
+.openzeppelin
+build
+.env
 # vscode
 .vscode
 
@@ -9,10 +17,3 @@ node_modules
 coverage
 coverage.json
 typechain
-.env
-gas-report.txt
-yarn-error.log
-coverage
-deploy
-.openzeppelin
-build

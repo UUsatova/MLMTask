@@ -4,11 +4,13 @@ pragma solidity ^0.8.12;
 import "contracts/interfaces/IMLMLevelLogic.sol";
 import "contracts/MLMLevelLogic.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @author UUsatova
  */
 contract MLMsystem is Initializable {
+    IERC20 private currentToken;
     mapping(address => uint256) private usersAccount;
     mapping(address => address) private usersReferalAddress;
     mapping(address => address[]) private usersDirectPartners;
@@ -17,9 +19,14 @@ contract MLMsystem is Initializable {
     /**
      * @dev proxy use this function for contract initialization
      * @param _mlmLevelLogic  - address of contract with actual level logic
+     * @param _currentToken  - address of contract with actual token
      */
-    function initialize(address _mlmLevelLogic) public initializer {
+    function initialize(address _mlmLevelLogic, address _currentToken)
+        public
+        initializer
+    {
         mlmLevelLogic = _mlmLevelLogic;
+        currentToken = IERC20(_currentToken);
     }
 
     /**
@@ -40,22 +47,27 @@ contract MLMsystem is Initializable {
      
      * @notice deposits 95 percent of the amount sent to the user's account
      */
-    function investInMLM() external payable {
+    function investInMLM(uint256 amount) external {
+        require(amount > 0, "You need to sell at least some tokens");
+        uint256 allowance = currentToken.allowance(msg.sender, address(this));
+        require(allowance >= amount, "Check the token allowance");
+        currentToken.transferFrom(msg.sender, address(this), amount);
+
         usersAccount[msg.sender] =
             usersAccount[msg.sender] +
-            (msg.value * 95) /
+            (amount * 95) /
             100;
     }
 
     /**
-     * @notice when this function is called, the user debits all his money from his account on
-     *          the contract. The money is transferred to his personal account
+     * @notice when this function is called, the user debits all his  CringeToken from his account on
+     *          the contract. Tokens are transferred to his personal account
      */
     function withdrawMoney() external {
         uint256 amount = usersAccount[msg.sender];
         require(amount > 0, "not enough money");
         usersAccount[msg.sender] = 0;
-        (bool sent, ) = msg.sender.call{value: amount}("");
+        bool sent = currentToken.transfer(msg.sender, amount);
         require(sent, "Failed to send user balance back to the user");
         calculateCommission(amount);
     }

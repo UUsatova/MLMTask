@@ -4,7 +4,7 @@ const { deployMockContract } = require("@ethereum-waffle/mock-contract");
 
 const { ethers, upgrades } = require("hardhat");
 
-const MLMLevelLogic = require("../../build/MLMLevelLogic.json"); ///@openzeppelin/contracts/build/contracts/ERC20.json
+const MLMLevelLogic = require("../../build/MLMLevelLogic.json");
 const ERC20 = require("@openzeppelin/contracts/build/contracts/ERC20.json");
 
 use(waffleChai);

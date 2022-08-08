@@ -4,24 +4,27 @@ const { deployMockContract } = require("@ethereum-waffle/mock-contract");
 
 const { ethers, upgrades } = require("hardhat");
 
-const MLMLevelLogic = require("../../build/MLMLevelLogic.json");
+const MLMLevelLogic = require("../../build/MLMLevelLogic.json"); ///@openzeppelin/contracts/build/contracts/ERC20.json
+const ERC20 = require("@openzeppelin/contracts/build/contracts/ERC20.json");
 
 use(waffleChai);
 
 describe("MLMsystem", () => {
   let mockMLMLevelLogic;
+  let mockIERC20;
   let deployer;
   let MLMsystem;
-  const sendValue = ethers.utils.parseEther("1");
+  const sendValue = 100;
 
   beforeEach(async () => {
     const accounts = await ethers.getSigners();
     deployer = accounts[0];
     mockMLMLevelLogic = await deployMockContract(deployer, MLMLevelLogic.abi);
+    mockIERC20 = await deployMockContract(deployer, ERC20.abi);
     const mlmsystem = await ethers.getContractFactory("MLMsystem");
     MLMsystem = await upgrades.deployProxy(
       mlmsystem,
-      [mockMLMLevelLogic.address],
+      [mockMLMLevelLogic.address, mockIERC20.address],
       {
         initializer: "initialize",
       }
@@ -46,15 +49,22 @@ describe("MLMsystem", () => {
 
   describe("investInMLM", async function () {
     it("correctly credits money to the user's account", async () => {
-      await MLMsystem.investInMLM({ value: sendValue });
+      await mockIERC20.mock.transferFrom.returns(true);
+      await mockIERC20.mock.allowance.returns(sendValue);
+
+      await MLMsystem.investInMLM(sendValue);
       const response = await MLMsystem.getUserAccount();
       assert.equal(response, (sendValue * 95) / 100);
     });
 
-    it("correctly credits money to the contract's account", async () => {
-      await MLMsystem.investInMLM({ value: sendValue });
-      const response = await ethers.provider.getBalance(MLMsystem.address);
-      assert.equal(response.toString(), sendValue.toString());
+    it("reverts transaction when amount of Tokens equal 0", async () => {
+      await mockIERC20.mock.allowance.returns(0);
+      await expect(MLMsystem.investInMLM(0)).to.be.revertedWith("");
+    });
+    it("reverts transaction when transferFrom returns false", async () => {
+      await mockIERC20.mock.transferFrom.returns(false);
+      await mockIERC20.mock.allowance.returns(sendValue);
+      await expect(MLMsystem.investInMLM(sendValue)).to.be.revertedWith("");
     });
   });
 
@@ -85,48 +95,21 @@ describe("MLMsystem", () => {
 
   describe("withdrawMoney", async function () {
     it("user without referral user withdraw Money,his system account equal 0", async () => {
+      await mockIERC20.mock.transferFrom.returns(true);
+      await mockIERC20.mock.allowance.returns(sendValue);
+      await mockIERC20.mock.transfer.returns(true);
+
       await MLMsystem["addUser()"]();
-      await MLMsystem.investInMLM({ value: sendValue });
+      await MLMsystem.investInMLM(sendValue);
       await MLMsystem.withdrawMoney();
       assert.equal(await MLMsystem.getUserAccount(), 0);
     });
 
-    it("user without referral user withdraw Money,contracts' account decreases correctly", async () => {
-      await MLMsystem["addUser()"]();
-      await MLMsystem.investInMLM({ value: sendValue });
-      const initalContractBalance = await ethers.provider.getBalance(
-        MLMsystem.address
-      );
-      const userAccount = await MLMsystem.getUserAccount();
-      await MLMsystem.withdrawMoney();
-      const resultContractBalance = await ethers.provider.getBalance(
-        MLMsystem.address
-      );
-      assert.equal(resultContractBalance, initalContractBalance - userAccount);
-    });
-
-    it("user without referral user withdraw Money,users' increases correctly", async () => {
-      await MLMsystem["addUser()"]();
-      await MLMsystem.investInMLM({ value: sendValue });
-      const usersAccountBeforeTransaction = await deployer.getBalance();
-      const ammountOfWithdrawMoney = await MLMsystem.getUserAccount();
-
-      const transactionResponse = await MLMsystem.withdrawMoney();
-      const transactionReceipt = await transactionResponse.wait();
-      const { gasUsed, effectiveGasPrice } = transactionReceipt;
-      const gasCost = gasUsed.mul(effectiveGasPrice);
-      const usersAccountAfterTransaction = await deployer.getBalance();
-
-      assert.equal(
-        usersAccountAfterTransaction
-          .sub(ammountOfWithdrawMoney)
-          .add(gasCost)
-          .toString(),
-        usersAccountBeforeTransaction.toString()
-      );
-    });
-
     it("user withdraws money and commission is correctly charged to another 3 users.All of them are connected to each other by referral links", async () => {
+      await mockIERC20.mock.transferFrom.returns(true);
+      await mockIERC20.mock.allowance.returns(ethers.utils.parseEther("1"));
+      await mockIERC20.mock.transfer.returns(true);
+
       const accounts = await ethers.getSigners();
       let currentConnectContract;
 
@@ -141,9 +124,9 @@ describe("MLMsystem", () => {
             await accounts[index + 1].getAddress()
           );
         }
-        await currentConnectContract.investInMLM({
-          value: ethers.utils.parseEther(money[index]),
-        });
+        await currentConnectContract.investInMLM(
+          ethers.utils.parseEther(money[index])
+        );
         await mockMLMLevelLogic.mock.getLevelBySum
           .withArgs(await currentConnectContract.getUserAccount())
           .returns(level[index]);
@@ -171,6 +154,18 @@ describe("MLMsystem", () => {
     it("return error with zero users' account", async () => {
       await expect(MLMsystem.withdrawMoney()).to.be.revertedWith(
         "not enough money"
+      );
+    });
+
+    it("return error when transfer returns false", async () => {
+      await mockIERC20.mock.transferFrom.returns(true);
+      await mockIERC20.mock.allowance.returns(sendValue);
+      await mockIERC20.mock.transfer.returns(false);
+
+      await MLMsystem["addUser()"]();
+      await MLMsystem.investInMLM(sendValue);
+      await expect(MLMsystem.withdrawMoney()).to.be.revertedWith(
+        "Failed to send user balance back to the user"
       );
     });
   });

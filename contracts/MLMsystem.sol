@@ -5,6 +5,7 @@ import "contracts/interfaces/IMLMLevelLogic.sol";
 import "contracts/MLMLevelLogic.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 
 /**
  * @author UUsatova
@@ -51,8 +52,12 @@ contract MLMsystem is Initializable {
         require(amount > 0, "You need to sell at least some tokens");
         uint256 allowance = currentToken.allowance(msg.sender, address(this));
         require(allowance >= amount, "Check the token allowance");
-        currentToken.transferFrom(msg.sender, address(this), amount);
-
+        bool sent = currentToken.transferFrom(
+            msg.sender,
+            address(this),
+            amount
+        );
+        require(sent, "Failed to send user balance back to the user");
         usersAccount[msg.sender] =
             usersAccount[msg.sender] +
             (amount * 95) /

@@ -5,6 +5,7 @@ import "contracts/interfaces/IMLMLevelLogic.sol";
 import "contracts/MLMLevelLogic.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "contracts/VerificationSystem.sol";
 
 /**
  * @author UUsatova
@@ -15,36 +16,54 @@ contract MLMsystem is Initializable {
     mapping(address => address) private usersReferalAddress;
     mapping(address => address[]) private usersDirectPartners;
     address private mlmLevelLogic;
+    address private verificationSystem;
 
     /**
      * @dev proxy use this function for contract initialization
      * @param _mlmLevelLogic  - address of contract with actual level logic
      * @param _currentToken  - address of contract with actual token
      */
-    function initialize(address _mlmLevelLogic, address _currentToken)
-        public
-        initializer
-    {
+    function initialize(
+        address _mlmLevelLogic,
+        address _currentToken,
+        address _verificationSystem
+    ) public initializer {
         mlmLevelLogic = _mlmLevelLogic;
         currentToken = IERC20(_currentToken);
+        verificationSystem = _verificationSystem;
     }
 
     /**
      * @notice adds a user to the system
      */
-    function addUser() external pure {}
+    function addUser(Transaction calldata req, bytes calldata signature)
+        external
+        view
+    {
+        require(
+            VerificationSystem(verificationSystem).verify(req, signature),
+            "verification failed"
+        );
+    }
 
     /**
      * @notice adds a user to the system using the address of the person who invited him
      * @param usersRefender address оf the person who invited him
      */
-    function addUser(address usersRefender) external {
+    function addUser(
+        Transaction calldata req,
+        bytes calldata signature,
+        address usersRefender
+    ) external {
+        require(
+            VerificationSystem(verificationSystem).verify(req, signature),
+            "verification failed"
+        );
         usersReferalAddress[msg.sender] = usersRefender;
         usersDirectPartners[usersRefender].push(msg.sender);
     }
 
     /**
-     
      * @notice deposits 95 percent of the amount sent to the user's account
      */
     function investInMLM(uint256 amount) external {

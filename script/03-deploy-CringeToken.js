@@ -7,8 +7,8 @@ const deployCringeToken = async () => {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account: " + deployer.address);
 
-  const cringeToken = await ethers.getContractFactory("MLMLevelLogic");
-  const CringeToken = await cringeToken.deploy();
+  const cringeToken = await ethers.getContractFactory("CringeToken");
+  const CringeToken = await cringeToken.deploy(1000);
 
   console.log("CringeToken: " + CringeToken.address);
 

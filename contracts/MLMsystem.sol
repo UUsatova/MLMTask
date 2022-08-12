@@ -4,58 +4,90 @@ pragma solidity ^0.8.12;
 import "contracts/interfaces/IMLMLevelLogic.sol";
 import "contracts/MLMLevelLogic.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "contracts/VerificationSystem.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
  * @author UUsatova
  */
 contract MLMsystem is Initializable {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    IERC20Upgradeable public currentToken;
     mapping(address => uint256) private usersAccount;
     mapping(address => address) private usersReferalAddress;
     mapping(address => address[]) private usersDirectPartners;
     address private mlmLevelLogic;
+    address private verificationSystem;
 
     /**
      * @dev proxy use this function for contract initialization
      * @param _mlmLevelLogic  - address of contract with actual level logic
+     * @param _currentToken  - address of contract with actual token
      */
-    function initialize(address _mlmLevelLogic) public initializer {
+    function initialize(
+        address _mlmLevelLogic,
+        address _currentToken,
+        address _verificationSystem
+    ) public initializer {
         mlmLevelLogic = _mlmLevelLogic;
+        currentToken = IERC20Upgradeable(_currentToken);
+        verificationSystem = _verificationSystem;
     }
 
     /**
      * @notice adds a user to the system
      */
-    function addUser() external pure {}
+    function addUser(Transaction calldata req, bytes calldata signature)
+        external
+        view
+    {
+        require(
+            VerificationSystem(verificationSystem).verify(req, signature),
+            "verification failed"
+        );
+    }
 
     /**
      * @notice adds a user to the system using the address of the person who invited him
      * @param usersRefender address оf the person who invited him
      */
-    function addUser(address usersRefender) external {
+    function addUserByRef(
+        Transaction calldata req,
+        bytes calldata signature,
+        address usersRefender
+    ) external {
+        require(
+            VerificationSystem(verificationSystem).verify(req, signature),
+            "verification failed"
+        );
         usersReferalAddress[msg.sender] = usersRefender;
         usersDirectPartners[usersRefender].push(msg.sender);
     }
 
     /**
-     
      * @notice deposits 95 percent of the amount sent to the user's account
      */
-    function investInMLM() external payable {
+    function investInMLM(uint256 amount) external {
+        require(amount > 0, "You need to sell at least some tokens");
         usersAccount[msg.sender] =
             usersAccount[msg.sender] +
-            (msg.value * 95) /
+            (amount * 95) /
             100;
+
+        currentToken.safeTransferFrom(msg.sender, address(this), amount);
     }
 
     /**
-     * @notice when this function is called, the user debits all his money from his account on
-     *          the contract. The money is transferred to his personal account
+     * @notice when this function is called, the user debits all his  CringeToken from his account on
+     *          the contract. Tokens are transferred to his personal account
      */
     function withdrawMoney() external {
         uint256 amount = usersAccount[msg.sender];
         require(amount > 0, "not enough money");
         usersAccount[msg.sender] = 0;
-        (bool sent, ) = msg.sender.call{value: amount}("");
+        bool sent = currentToken.transfer(msg.sender, amount);
         require(sent, "Failed to send user balance back to the user");
         calculateCommission(amount);
     }

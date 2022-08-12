@@ -2,17 +2,21 @@ const { verify } = require("../utils/verify");
 const { ethers, run, network, upgrades } = require("hardhat");
 const { deployMLMLevelLogic } = require("../script/02-deploy-MLMLevelLogic");
 const { deployCringeToken } = require("../script/03-deploy-CringeToken");
+const {
+  deployVerificationSystem,
+} = require("../script/04-deploy-VerificationSystem");
 async function main() {
   const { log } = deployments;
   const [deployer] = await ethers.getSigners();
   const MLMLevelLogic = await deployMLMLevelLogic();
   const CustomToken = await deployCringeToken();
+  const VerificationSystem = await deployVerificationSystem();
   console.log("Deploying contracts with the account: " + deployer.address);
 
   const mlmsystem = await ethers.getContractFactory("MLMsystem");
   const MLMsystem = await upgrades.deployProxy(
     mlmsystem,
-    [MLMLevelLogic.address, CustomToken.address],
+    [MLMLevelLogic.address, CustomToken.address, VerificationSystem.address],
 
     {
       initializer: "initialize",
@@ -27,6 +31,7 @@ async function main() {
     await verify(MLMsystem.address, [
       MLMLevelLogic.address,
       CustomToken.address,
+      VerificationSystem.address,
     ]);
   }
 }

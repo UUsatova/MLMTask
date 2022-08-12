@@ -4,14 +4,17 @@ pragma solidity ^0.8.12;
 import "contracts/interfaces/IMLMLevelLogic.sol";
 import "contracts/MLMLevelLogic.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "contracts/VerificationSystem.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
  * @author UUsatova
  */
 contract MLMsystem is Initializable {
-    IERC20 private currentToken;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    IERC20Upgradeable public currentToken;
     mapping(address => uint256) private usersAccount;
     mapping(address => address) private usersReferalAddress;
     mapping(address => address[]) private usersDirectPartners;
@@ -29,7 +32,7 @@ contract MLMsystem is Initializable {
         address _verificationSystem
     ) public initializer {
         mlmLevelLogic = _mlmLevelLogic;
-        currentToken = IERC20(_currentToken);
+        currentToken = IERC20Upgradeable(_currentToken);
         verificationSystem = _verificationSystem;
     }
 
@@ -50,7 +53,7 @@ contract MLMsystem is Initializable {
      * @notice adds a user to the system using the address of the person who invited him
      * @param usersRefender address оf the person who invited him
      */
-    function addUser(
+    function addUserByRef(
         Transaction calldata req,
         bytes calldata signature,
         address usersRefender
@@ -68,18 +71,12 @@ contract MLMsystem is Initializable {
      */
     function investInMLM(uint256 amount) external {
         require(amount > 0, "You need to sell at least some tokens");
-        uint256 allowance = currentToken.allowance(msg.sender, address(this));
-        require(allowance >= amount, "Check the token allowance");
-        bool sent = currentToken.transferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
-        require(sent, "Failed to send user balance back to the user");
         usersAccount[msg.sender] =
             usersAccount[msg.sender] +
             (amount * 95) /
             100;
+
+        currentToken.safeTransferFrom(msg.sender, address(this), amount);
     }
 
     /**

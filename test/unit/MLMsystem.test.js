@@ -295,7 +295,6 @@ describe("MLMsystem", () => {
 
     it("return error when transfer returns false", async () => {
       await mockIERC20.mock.transferFrom.returns(true);
-      await mockIERC20.mock.allowance.returns(sendValue);
       await mockIERC20.mock.transfer.returns(false);
       domain = {
         name: "MLMsystem",
